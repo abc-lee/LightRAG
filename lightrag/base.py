@@ -163,6 +163,8 @@ class QueryParam:
     """
 
     filter_lambda: Callable[[dict], bool] | None = None
+    """Optional filter function applied to each entity result dict from vector search.
+    Only results where filter_lambda returns True are kept. If None, no filtering is applied."""
 
     include_references: bool = False
     """If True, includes reference list in the response for supported endpoints.

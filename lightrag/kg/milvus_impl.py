@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, final, Optional, Dict
+from typing import Any, Callable, final, Optional, Dict
 from dataclasses import dataclass, fields
 import numpy as np
 from lightrag.utils import logger, compute_mdhash_id
@@ -1492,7 +1492,11 @@ class MilvusVectorDBStorage(BaseVectorStorage):
         return results
 
     async def query(
-        self, query: str, top_k: int, query_embedding: list[float] = None
+        self,
+        query: str,
+        top_k: int,
+        query_embedding: list[float] = None,
+        filter_lambda: Callable[[dict], bool] | None = None,
     ) -> list[dict[str, Any]]:
         # Ensure collection is loaded before querying
         self._ensure_collection_loaded()

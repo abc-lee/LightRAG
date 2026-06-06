@@ -6,7 +6,7 @@ import numpy as np
 import configparser
 import asyncio
 
-from typing import Any, Union, final
+from typing import Any, Callable, Union, final
 
 from ..base import (
     BaseGraphStorage,
@@ -2360,7 +2360,11 @@ class MongoVectorDBStorage(BaseVectorStorage):
         return list_data
 
     async def query(
-        self, query: str, top_k: int, query_embedding: list[float] = None
+        self,
+        query: str,
+        top_k: int,
+        query_embedding: list[float] = None,
+        filter_lambda: Callable[[dict], bool] | None = None,
     ) -> list[dict[str, Any]]:
         """Queries the vector database using Atlas Vector Search."""
         if query_embedding is not None:

@@ -5,7 +5,7 @@ from pathlib import Path
 import asyncio
 import json
 import json_repair
-from typing import Any, AsyncIterator, overload, Literal
+from typing import Any, AsyncIterator, Callable, overload, Literal
 from collections import Counter, defaultdict
 
 from lightrag.exceptions import (
@@ -3664,7 +3664,7 @@ async def _perform_kg_search(
             entities_vdb,
             query_param,
             query_embedding=ll_embedding,
-            filter_lambda=getattr(query_param, "filter_lambda", None),
+            filter_lambda=query_param.filter_lambda,
         )
 
     elif query_param.mode == "global" and len(hl_keywords) > 0:
@@ -3684,7 +3684,7 @@ async def _perform_kg_search(
                 entities_vdb,
                 query_param,
                 query_embedding=ll_embedding,
-                filter_lambda=getattr(query_param, "filter_lambda", None),
+                filter_lambda=query_param.filter_lambda,
             )
         if len(hl_keywords) > 0:
             global_relations, global_entities = await _get_edge_data(
@@ -4366,7 +4366,7 @@ async def _get_node_data(
     entities_vdb: BaseVectorStorage,
     query_param: QueryParam,
     query_embedding=None,
-    filter_lambda=None,
+    filter_lambda: Callable[[dict], bool] | None = None,
 ):
     logger.info(
         f"Query nodes: {query} (top_k:{query_param.top_k}, cosine:{entities_vdb.cosine_better_than_threshold})"

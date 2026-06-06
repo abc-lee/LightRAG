@@ -1,7 +1,7 @@
 import os
 import time
 import asyncio
-from typing import Any, final
+from typing import Any, Callable, final
 import json
 import numpy as np
 from dataclasses import dataclass
@@ -183,7 +183,11 @@ class FaissVectorDBStorage(BaseVectorStorage):
         return [m["__id__"] for m in list_data]
 
     async def query(
-        self, query: str, top_k: int, query_embedding: list[float] = None
+        self,
+        query: str,
+        top_k: int,
+        query_embedding: list[float] = None,
+        filter_lambda: Callable[[dict], bool] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Search by a textual query; returns top_k results with their metadata + similarity distance.
