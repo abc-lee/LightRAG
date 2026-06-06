@@ -3664,6 +3664,7 @@ async def _perform_kg_search(
             entities_vdb,
             query_param,
             query_embedding=ll_embedding,
+            filter_lambda=getattr(query_param, "filter_lambda", None),
         )
 
     elif query_param.mode == "global" and len(hl_keywords) > 0:
@@ -3683,6 +3684,7 @@ async def _perform_kg_search(
                 entities_vdb,
                 query_param,
                 query_embedding=ll_embedding,
+                filter_lambda=getattr(query_param, "filter_lambda", None),
             )
         if len(hl_keywords) > 0:
             global_relations, global_entities = await _get_edge_data(
@@ -4364,13 +4366,15 @@ async def _get_node_data(
     entities_vdb: BaseVectorStorage,
     query_param: QueryParam,
     query_embedding=None,
+    filter_lambda=None,
 ):
     logger.info(
         f"Query nodes: {query} (top_k:{query_param.top_k}, cosine:{entities_vdb.cosine_better_than_threshold})"
     )
 
     results = await entities_vdb.query(
-        query, top_k=query_param.top_k, query_embedding=query_embedding
+        query, top_k=query_param.top_k, query_embedding=query_embedding,
+        filter_lambda=filter_lambda,
     )
 
     if not len(results):

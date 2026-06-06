@@ -2,7 +2,7 @@ import asyncio
 import base64
 import os
 import zlib
-from typing import Any, final
+from typing import Any, Callable, final
 from dataclasses import dataclass
 import numpy as np
 import time
@@ -142,7 +142,8 @@ class NanoVectorDBStorage(BaseVectorStorage):
             )
 
     async def query(
-        self, query: str, top_k: int, query_embedding: list[float] = None
+        self, query: str, top_k: int, query_embedding: list[float] = None,
+        filter_lambda: Callable[[dict], bool] | None = None,
     ) -> list[dict[str, Any]]:
         # Use provided embedding or compute it
         if query_embedding is not None:
@@ -159,6 +160,7 @@ class NanoVectorDBStorage(BaseVectorStorage):
             query=embedding,
             top_k=top_k,
             better_than_threshold=self.cosine_better_than_threshold,
+            filter_lambda=filter_lambda,
         )
         results = [
             {

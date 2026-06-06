@@ -162,6 +162,8 @@ class QueryParam:
     Default is True to enable reranking when rerank model is available.
     """
 
+    filter_lambda: Callable[[dict], bool] | None = None
+
     include_references: bool = False
     """If True, includes reference list in the response for supported endpoints.
     This parameter controls whether the API response includes a references field
@@ -260,7 +262,8 @@ class BaseVectorStorage(StorageNameSpace, ABC):
 
     @abstractmethod
     async def query(
-        self, query: str, top_k: int, query_embedding: list[float] = None
+        self, query: str, top_k: int, query_embedding: list[float] = None,
+        filter_lambda: Callable[[dict], bool] | None = None,
     ) -> list[dict[str, Any]]:
         """Query the vector storage and retrieve top_k results.
 
@@ -269,6 +272,8 @@ class BaseVectorStorage(StorageNameSpace, ABC):
             top_k: Number of top results to return
             query_embedding: Optional pre-computed embedding for the query.
                            If provided, skips embedding computation for better performance.
+            filter_lambda: Optional filter function applied to each result dict.
+                          Only results where filter_lambda returns True are kept.
         """
 
     @abstractmethod
