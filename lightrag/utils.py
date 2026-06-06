@@ -3186,7 +3186,7 @@ def convert_to_user_format(
             formatted_entities.append(
                 {
                     "entity_name": original_entity.get("entity_name", entity_name),
-                    "entity_type": original_entity.get("entity_type", "UNKNOWN"),
+                    "entity_type": original_entity.get("entity_type", "unknown"),
                     "description": original_entity.get("description", ""),
                     "source_id": original_entity.get("source_id", ""),
                     "file_path": original_entity.get("file_path", "unknown_source"),
@@ -3198,7 +3198,7 @@ def convert_to_user_format(
             formatted_entities.append(
                 {
                     "entity_name": entity_name,
-                    "entity_type": entity.get("type", "UNKNOWN"),
+                    "entity_type": entity.get("type", "unknown"),
                     "description": entity.get("description", ""),
                     "source_id": entity.get("source_id", ""),
                     "file_path": entity.get("file_path", "unknown_source"),

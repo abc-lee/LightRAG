@@ -2429,7 +2429,7 @@ class LightRAG:
             entity_nodes: list[tuple[str, dict[str, str]]] = []
             for entity_data in deduped_entities.values():
                 entity_name = entity_data["entity_name"]
-                entity_type = entity_data.get("entity_type", "UNKNOWN")
+                entity_type = str(entity_data.get("entity_type", "unknown") or "unknown").replace(" ", "").lower()
                 description = entity_data.get("description", "No description provided")
                 source_chunk_id = entity_data.get("source_id", "UNKNOWN")
                 source_id = chunk_to_source_map.get(source_chunk_id, "UNKNOWN")
@@ -2505,7 +2505,7 @@ class LightRAG:
                                     "entity_id": need_insert_id,
                                     "source_id": source_id,
                                     "description": "UNKNOWN",
-                                    "entity_type": "UNKNOWN",
+                                    "entity_type": "unknown",
                                     "file_path": file_path,
                                     "created_at": int(time.time()),
                                 },
@@ -2518,7 +2518,7 @@ class LightRAG:
                 edge_data = {
                     "weight": relationship_data.get("weight", 1.0),
                     "description": relationship_data["description"],
-                    "keywords": relationship_data["keywords"],
+                    "keywords": (relationship_data["keywords"] or "").lower(),
                     "source_id": source_id,
                     "file_path": file_path,
                     "created_at": int(time.time()),
@@ -2530,7 +2530,7 @@ class LightRAG:
                         "src_id": normalized_src_id,
                         "tgt_id": normalized_tgt_id,
                         "description": relationship_data["description"],
-                        "keywords": relationship_data["keywords"],
+                        "keywords": (relationship_data["keywords"] or "").lower(),
                         "source_id": source_id,
                         "weight": relationship_data.get("weight", 1.0),
                         "file_path": file_path,

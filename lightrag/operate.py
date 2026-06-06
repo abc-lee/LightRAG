@@ -517,7 +517,7 @@ def _handle_single_relationship_extraction(
         edge_keywords = sanitize_and_normalize_extracted_text(
             record_attributes[3], remove_inner_quotes=True
         )
-        edge_keywords = edge_keywords.replace("，", ",")
+        edge_keywords = edge_keywords.replace("，", ",").lower()
 
         # Process relationship description with same cleaning pipeline
         edge_description = sanitize_and_normalize_extracted_text(record_attributes[4])
@@ -1241,7 +1241,7 @@ async def _rebuild_single_entity(
         else:
             final_description = current_entity.get("description", "")
 
-        entity_type = current_entity.get("entity_type", "UNKNOWN")
+        entity_type = str(current_entity.get("entity_type", "unknown") or "unknown").replace(" ", "").lower()
         await _update_entity_storage(
             final_description,
             entity_type,
@@ -1260,7 +1260,7 @@ async def _rebuild_single_entity(
         if entity_data.get("description"):
             descriptions.append(entity_data["description"])
         if entity_data.get("entity_type"):
-            entity_types.append(entity_data["entity_type"])
+            entity_types.append(str(entity_data.get("entity_type", "unknown") or "unknown").replace(" ", "").lower())
         if entity_data.get("file_path"):
             file_path = entity_data["file_path"]
             if file_path and file_path not in seen_paths:
@@ -1298,7 +1298,7 @@ async def _rebuild_single_entity(
     entity_type = (
         max(set(entity_types), key=entity_types.count)
         if entity_types
-        else current_entity.get("entity_type", "UNKNOWN")
+        else str(current_entity.get("entity_type", "unknown") or "unknown").replace(" ", "").lower()
     )
 
     # Generate final description from entities or fallback to current
@@ -1417,7 +1417,7 @@ async def _rebuild_single_relationship(
         if rel_data.get("description"):
             descriptions.append(rel_data["description"])
         if rel_data.get("keywords"):
-            keywords.append(rel_data["keywords"])
+            keywords.append((rel_data["keywords"] or "").lower())
         if rel_data.get("weight"):
             weights.append(rel_data["weight"])
         if rel_data.get("file_path"):
@@ -1456,7 +1456,7 @@ async def _rebuild_single_relationship(
     combined_keywords = (
         ", ".join(set(keywords))
         if keywords
-        else current_relationship.get("keywords", "")
+        else (current_relationship.get("keywords") or "").lower()
     )
 
     weight = sum(weights) if weights else current_relationship.get("weight", 1.0)
@@ -1514,7 +1514,7 @@ async def _rebuild_single_relationship(
                 "entity_id": node_id,
                 "source_id": node_source_id,
                 "description": node_description,
-                "entity_type": "UNKNOWN",
+                "entity_type": "unknown",
                 "file_path": node_file_path,
                 "created_at": node_created_at,
                 "truncate": "",
@@ -1541,7 +1541,7 @@ async def _rebuild_single_relationship(
                         "content": entity_content,
                         "entity_name": node_id,
                         "source_id": node_source_id,
-                        "entity_type": "UNKNOWN",
+                        "entity_type": "unknown",
                         "file_path": node_file_path,
                     }
                 }
@@ -1649,13 +1649,13 @@ async def _merge_nodes_then_upsert(
                 not isinstance(existing_entity_type, str)
                 or not existing_entity_type.strip()
             ):
-                existing_entity_type = "UNKNOWN"
+                existing_entity_type = "unknown"
             # Sanitize entity_type read back from DB to prevent dirty data from propagating
             if "," in existing_entity_type:
                 original = existing_entity_type
                 tokens = [t.strip() for t in existing_entity_type.split(",")]
                 non_empty = [t for t in tokens if t]
-                existing_entity_type = non_empty[0] if non_empty else "UNKNOWN"
+                existing_entity_type = non_empty[0].strip().lower() if non_empty else "unknown"
                 logger.warning(
                     f"Entity type read from DB contains comma, taking first non-empty token: '{original}' -> '{existing_entity_type}'"
                 )
@@ -1755,7 +1755,8 @@ async def _merge_nodes_then_upsert(
         # 6.2 Finalize entity type by highest count
         entity_type = sorted(
             Counter(
-                [dp["entity_type"] for dp in nodes_data] + already_entity_types
+                [str(dp.get("entity_type", "unknown") or "unknown").replace(" ", "").lower() for dp in nodes_data]
+                + [str(et).replace(" ", "").lower() for et in already_entity_types]
             ).items(),
             key=lambda x: x[1],
             reverse=True,
@@ -2104,14 +2105,14 @@ async def _merge_edges_then_upsert(
         for i, keyword_str in enumerate(already_keywords, start=1):
             if keyword_str:  # Skip empty strings
                 all_keywords.update(
-                    k.strip() for k in keyword_str.split(",") if k.strip()
+                    k.strip().lower() for k in keyword_str.split(",") if k.strip()
                 )
             await _cooperative_yield(i, every=32)
         # Process new keywords from edges_data
         for i, edge in enumerate(edges_data, start=1):
             if edge.get("keywords"):
                 all_keywords.update(
-                    k.strip() for k in edge["keywords"].split(",") if k.strip()
+                    k.strip().lower() for k in edge["keywords"].split(",") if k.strip()
                 )
             await _cooperative_yield(i, every=32)
         # Join all unique keywords with commas
@@ -2266,7 +2267,7 @@ async def _merge_edges_then_upsert(
                     "entity_id": need_insert_id,
                     "source_id": source_id,
                     "description": description,
-                    "entity_type": "UNKNOWN",
+                    "entity_type": "unknown",
                     "file_path": file_path,
                     "created_at": node_created_at,
                     "truncate": "",
@@ -2296,7 +2297,7 @@ async def _merge_edges_then_upsert(
                             "content": entity_content,
                             "entity_name": need_insert_id,
                             "source_id": source_id,
-                            "entity_type": "UNKNOWN",
+                            "entity_type": "unknown",
                             "file_path": file_path,
                         }
                     }
@@ -2312,7 +2313,7 @@ async def _merge_edges_then_upsert(
                 if added_entities is not None:
                     entity_data = {
                         "entity_name": need_insert_id,
-                        "entity_type": "UNKNOWN",
+                        "entity_type": "unknown",
                         "description": description,
                         "source_id": source_id,
                         "file_path": file_path,
@@ -2403,7 +2404,7 @@ async def _merge_edges_then_upsert(
                                 "entity_name": need_insert_id,
                                 "source_id": limited_source_id_str,
                                 "entity_type": existing_node.get(
-                                    "entity_type", "UNKNOWN"
+                                    "entity_type", "unknown"
                                 ),
                                 "file_path": existing_node.get(
                                     "file_path", "unknown_source"
@@ -3834,7 +3835,7 @@ async def _apply_token_truncation(
         entities_context.append(
             {
                 "entity": entity_name,
-                "type": entity.get("entity_type", "UNKNOWN"),
+                "type": entity.get("entity_type", "unknown"),
                 "description": entity.get("description", "UNKNOWN"),
                 "created_at": created_at,
                 "file_path": entity.get("file_path", "unknown_source"),

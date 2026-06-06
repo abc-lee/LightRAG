@@ -305,6 +305,8 @@ async def _edit_entity_impl(
 
     new_node_data = {**node_data, **updated_data}
     new_node_data["entity_id"] = new_entity_name
+    if "entity_type" in new_node_data:
+        new_node_data["entity_type"] = str(new_node_data["entity_type"] or "unknown").replace(" ", "").lower()
 
     if "entity_name" in new_node_data:
         del new_node_data[
@@ -792,6 +794,8 @@ async def aedit_relation(
 
             # 2. Update relation information in the graph
             new_edge_data = {**edge_data, **updated_data}
+            if "keywords" in new_edge_data:
+                new_edge_data["keywords"] = (new_edge_data["keywords"] or "").lower()
             await chunk_entity_relation_graph.upsert_edge(
                 source_entity, target_entity, new_edge_data
             )
@@ -959,7 +963,7 @@ async def acreate_entity(
             # Prepare node data with defaults if missing
             node_data = {
                 "entity_id": entity_name,
-                "entity_type": entity_data.get("entity_type", "UNKNOWN"),
+                "entity_type": str(entity_data.get("entity_type", "unknown") or "unknown").replace(" ", "").lower(),
                 "description": entity_data.get("description", ""),
                 "source_id": entity_data.get("source_id", "manual_creation"),
                 "file_path": entity_data.get("file_path", "manual_creation"),
@@ -1091,7 +1095,7 @@ async def acreate_relation(
             # Prepare edge data with defaults if missing
             edge_data = {
                 "description": relation_data.get("description", ""),
-                "keywords": relation_data.get("keywords", ""),
+                "keywords": (relation_data.get("keywords") or "").lower(),
                 "source_id": relation_data.get("source_id", "manual_creation"),
                 "weight": float(relation_data.get("weight", 1.0)),
                 "file_path": relation_data.get("file_path", "manual_creation"),
@@ -1267,6 +1271,8 @@ async def _merge_entities_impl(
     # Apply any explicitly provided target entity data (overrides merged data)
     for key, value in target_entity_data.items():
         merged_entity_data[key] = value
+    if "entity_type" in merged_entity_data:
+        merged_entity_data["entity_type"] = str(merged_entity_data["entity_type"] or "unknown").replace(" ", "").lower()
 
     # 4. Get all relationships of the source entities and target entity (if exists)
     all_relations = []
@@ -1381,6 +1387,8 @@ async def _merge_entities_impl(
     # Apply relationship updates
     logger.info(f"Entity Merge: updatign {len(relation_updates)} relations")
     for rel_data in relation_updates.values():
+        if "keywords" in rel_data["data"]:
+            rel_data["data"]["keywords"] = (rel_data["data"]["keywords"] or "").lower()
         await chunk_entity_relation_graph.upsert_edge(
             rel_data["graph_src"], rel_data["graph_tgt"], rel_data["data"]
         )
