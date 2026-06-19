@@ -305,6 +305,20 @@ async def _edit_entity_impl(
 
     new_node_data = {**node_data, **updated_data}
     new_node_data["entity_id"] = new_entity_name
+
+    # Brain region protection: prevent description AND entity_type overwrite for brainregion nodes
+    if str(node_data.get("entity_type", "")).strip().lower() == "brainregion":
+        if "description" in updated_data:
+            logger.warning(
+                f"Edit entity: refusing to overwrite description of brain region '{entity_name}'"
+            )
+            new_node_data["description"] = node_data.get("description", "")
+        if "entity_type" in updated_data:
+            logger.warning(
+                f"Edit entity: refusing to overwrite entity_type of brain region '{entity_name}'"
+            )
+            new_node_data["entity_type"] = node_data.get("entity_type", "brainregion")
+
     if "entity_type" in new_node_data:
         new_node_data["entity_type"] = str(new_node_data["entity_type"] or "unknown").replace(" ", "").lower()
 
@@ -1273,6 +1287,32 @@ async def _merge_entities_impl(
         merged_entity_data[key] = value
     if "entity_type" in merged_entity_data:
         merged_entity_data["entity_type"] = str(merged_entity_data["entity_type"] or "unknown").replace(" ", "").lower()
+
+    # Brain region protection: if any source or target entity is a brainregion,
+    # preserve the brainregion's original description (contains brain_meta_* metadata)
+    is_brainregion_merge = False
+    brainregion_original_desc = None
+
+    # Check target entity
+    if target_exists and existing_target_entity_data:
+        if str(existing_target_entity_data.get("entity_type", "")).strip().lower() == "brainregion":
+            is_brainregion_merge = True
+            brainregion_original_desc = existing_target_entity_data.get("description", "")
+
+    # Check source entities
+    if not is_brainregion_merge:
+        for src_name, src_data in source_entities_data.items():
+            if str(src_data.get("entity_type", "")).strip().lower() == "brainregion":
+                is_brainregion_merge = True
+                brainregion_original_desc = src_data.get("description", "")
+                break
+
+    if is_brainregion_merge and brainregion_original_desc is not None:
+        logger.warning(
+            f"Entity Merge: preserving brain region description and entity_type for '{target_entity}'"
+        )
+        merged_entity_data["description"] = brainregion_original_desc
+        merged_entity_data["entity_type"] = "brainregion"
 
     # 4. Get all relationships of the source entities and target entity (if exists)
     all_relations = []
