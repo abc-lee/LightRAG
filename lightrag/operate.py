@@ -1641,6 +1641,20 @@ async def _merge_nodes_then_upsert(
 
         # 1. Get existing node data from knowledge graph
         already_node = await knowledge_graph_inst.get_node(entity_name)
+
+        # --- Brain region protection: preserve description for brainregion nodes ---
+        is_brain_region = (
+            already_node
+            and str(already_node.get("entity_type", "")).strip().lower() == "brainregion"
+        )
+        if is_brain_region and already_node:
+            # Skip description merge for brain region nodes — their description
+            # contains structured metadata (brain_meta_*) that must not be overwritten.
+            # Still update source_id, file_path etc. from the merge.
+            logger.info(
+                f"Brain region node '{entity_name}' detected in merge — preserving description"
+            )
+
         if already_node:
             existing_entity_type = already_node.get("entity_type")
             # Coerce to str before any string operations: non-string values from
@@ -1916,6 +1930,14 @@ async def _merge_nodes_then_upsert(
             created_at=int(time.time()),
             truncate=truncation_info,
         )
+        # Brain region protection: restore original description AND entity_type
+        if is_brain_region and already_node:
+            node_data["description"] = already_node.get("description", description)
+            node_data["entity_type"] = already_node.get("entity_type", entity_type)
+            # Fix VDB consistency: also update the local variables used by VDB upsert below
+            # (VDB upsert at line 1926 uses local `description`, line 1930 uses local `entity_type`)
+            description = node_data["description"]
+            entity_type = node_data["entity_type"]
         await knowledge_graph_inst.upsert_node(
             entity_name,
             node_data=node_data,
