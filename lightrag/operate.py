@@ -1117,6 +1117,12 @@ async def _rebuild_single_entity(
     if not current_entity:
         return
 
+    # Brain region protection flag: skip description rebuild but still update
+    # chunk tracking and source_id (early return would skip these updates)
+    is_brain_region = (
+        str(current_entity.get("entity_type", "")).strip().lower() == "brainregion"
+    )
+
     # Helper function to update entity in both graph and vector storage
     async def _update_entity_storage(
         final_description: str,
@@ -1138,6 +1144,15 @@ async def _rebuild_single_entity(
                 "created_at": int(time.time()),
                 "truncate": truncation_info,
             }
+            # Brain region protection: preserve original description and entity_type
+            if is_brain_region:
+                updated_entity_data["description"] = current_entity.get("description", final_description)
+                updated_entity_data["entity_type"] = current_entity.get("entity_type", entity_type)
+                final_description = updated_entity_data["description"]
+                entity_type = updated_entity_data["entity_type"]
+                logger.info(
+                    f"Preserving description for brain region node '{entity_name}' during rebuild"
+                )
             await knowledge_graph_inst.upsert_node(entity_name, updated_entity_data)
 
             # Update entity in vector database (equally critical)
