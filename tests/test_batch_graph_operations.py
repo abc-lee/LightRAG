@@ -476,7 +476,7 @@ class TestAinsertCustomKgBatchPath:
 
             graph = rag.chunk_entity_relation_graph
             graph.upsert_nodes_batch = AsyncMock()
-            graph.has_nodes_batch = AsyncMock(return_value={"EntityA"})
+            graph.has_nodes_batch = AsyncMock(return_value={"entitya"})
             graph.upsert_edges_batch = AsyncMock()
 
             rag.entities_vdb.upsert = AsyncMock()
@@ -535,20 +535,20 @@ class TestAinsertCustomKgBatchPath:
 
             entity_batch = graph.upsert_nodes_batch.await_args_list[0].args[0]
             assert len(entity_batch) == 1
-            assert entity_batch[0][0] == "EntityA"
-            assert entity_batch[0][1]["entity_type"] == "CONCEPT"
+            assert entity_batch[0][0] == "entitya"
+            assert entity_batch[0][1]["entity_type"] == "concept"
             assert entity_batch[0][1]["description"] == "latest version"
             assert entity_batch[0][1]["file_path"] == "test.pdf"
             assert entity_batch[0][1]["source_id"]
 
             placeholder_batch = graph.upsert_nodes_batch.await_args_list[1].args[0]
             assert len(placeholder_batch) == 1
-            assert placeholder_batch[0][0] == "EntityB"
+            assert placeholder_batch[0][0] == "entityb"
 
             edge_batch = graph.upsert_edges_batch.await_args.args[0]
             assert len(edge_batch) == 1
-            assert edge_batch[0][0] == "EntityB"
-            assert edge_batch[0][1] == "EntityA"
+            assert edge_batch[0][0] == "entityb"
+            assert edge_batch[0][1] == "entitya"
             assert edge_batch[0][2]["description"] == "latest relation"
             assert edge_batch[0][2]["weight"] == 2.0
 
@@ -560,11 +560,11 @@ class TestAinsertCustomKgBatchPath:
             rel_vdb_payload = rag.relationships_vdb.upsert.await_args.args[0]
             assert len(rel_vdb_payload) == 1
             only_rel = next(iter(rel_vdb_payload.values()))
-            assert only_rel["src_id"] == "EntityA"
-            assert only_rel["tgt_id"] == "EntityB"
+            assert only_rel["src_id"] == "entitya"
+            assert only_rel["tgt_id"] == "entityb"
             assert only_rel["description"] == "latest relation"
             assert rag.relationships_vdb.delete.await_args.args[0] == [
-                make_relation_vdb_ids("EntityA", "EntityB")[1]
+                make_relation_vdb_ids("entitya", "entityb")[1]
             ]
 
             await rag.finalize_storages()

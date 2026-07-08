@@ -2420,7 +2420,8 @@ class LightRAG:
             # preserve the old serial upsert semantics deterministically.
             deduped_entities: dict[str, dict[str, Any]] = {}
             for entity_data in custom_kg.get("entities", []):
-                entity_name = entity_data["entity_name"]
+                entity_name = entity_data["entity_name"].lower()
+                entity_data["entity_name"] = entity_name  # 同步更新字典，让下游 deduped_entities.values() 取到的也是 lower
                 deduped_entities.pop(entity_name, None)
                 deduped_entities[entity_name] = entity_data
 
@@ -2462,8 +2463,10 @@ class LightRAG:
             # for each endpoint pair regardless of order.
             deduped_relationships: dict[tuple[str, str], dict[str, Any]] = {}
             for relationship_data in custom_kg.get("relationships", []):
-                src_id = relationship_data["src_id"]
-                tgt_id = relationship_data["tgt_id"]
+                src_id = relationship_data["src_id"].lower()
+                tgt_id = relationship_data["tgt_id"].lower()
+                relationship_data["src_id"] = src_id
+                relationship_data["tgt_id"] = tgt_id
                 relation_key = tuple(sorted((src_id, tgt_id)))
                 deduped_relationships.pop(relation_key, None)
                 deduped_relationships[relation_key] = relationship_data
