@@ -691,17 +691,17 @@ class TestAinsertCustomKgBatchPath:
             await rag.ainsert_custom_kg(custom_kg)
 
             normalized_rel_id, legacy_rel_id = make_relation_vdb_ids(
-                "EntityA", "EntityB"
+                "entitya", "entityb"
             )
             rag.relationships_vdb.get_by_id = AsyncMock(
                 side_effect=lambda rid: {"ok": True} if rid == legacy_rel_id else None
             )
 
             result_ab = await rag.get_relation_info(
-                "EntityA", "EntityB", include_vector_data=True
+                "entitya", "entityb", include_vector_data=True
             )
             result_ba = await rag.get_relation_info(
-                "EntityB", "EntityA", include_vector_data=True
+                "entityb", "entitya", include_vector_data=True
             )
 
             assert result_ab["vector_data"] == {"ok": True}
