@@ -4456,6 +4456,7 @@ async def _get_node_data(
             "entity_name": k["entity_name"],
             "rank": d,
             "created_at": k.get("created_at"),
+            "distance": k.get("distance"),
         }
         for k, n, d in zip(results, node_datas, node_degrees)
         if n is not None

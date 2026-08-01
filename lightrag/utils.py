@@ -3191,6 +3191,7 @@ def convert_to_user_format(
                     "source_id": original_entity.get("source_id", ""),
                     "file_path": original_entity.get("file_path", "unknown_source"),
                     "created_at": original_entity.get("created_at", ""),
+                    "distance": original_entity.get("distance"),
                 }
             )
         else:
@@ -3203,6 +3204,7 @@ def convert_to_user_format(
                     "source_id": entity.get("source_id", ""),
                     "file_path": entity.get("file_path", "unknown_source"),
                     "created_at": entity.get("created_at", ""),
+                    "distance": entity.get("distance"),
                 }
             )
 
