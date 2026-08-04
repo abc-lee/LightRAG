@@ -2515,6 +2515,14 @@ class LightRAG:
                             )
                         )
                         existing_nodes.add(need_insert_id)
+                        # 修复：placeholder node 也加入 all_entities_data，让 vdb upsert 包含它
+                        all_entities_data.append({
+                            "entity_name": need_insert_id,
+                            "source_id": source_id,
+                            "description": "UNKNOWN",
+                            "entity_type": "unknown",
+                            "file_path": file_path,
+                        })
 
                 normalized_src_id, normalized_tgt_id = sorted((src_id, tgt_id))
 

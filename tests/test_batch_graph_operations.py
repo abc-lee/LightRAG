@@ -553,9 +553,14 @@ class TestAinsertCustomKgBatchPath:
             assert edge_batch[0][2]["weight"] == 2.0
 
             entity_vdb_payload = rag.entities_vdb.upsert.await_args.args[0]
-            assert len(entity_vdb_payload) == 1
-            only_entity = next(iter(entity_vdb_payload.values()))
-            assert only_entity["description"] == "latest version"
+            assert len(entity_vdb_payload) == 2  # EntityA (declared) + EntityB (placeholder)
+            # 验证 placeholder 也有 vdb 向量
+            placeholder_entry = next(
+                v for v in entity_vdb_payload.values()
+                if v.get("entity_name") == "entityb"
+            )
+            assert placeholder_entry["description"] == "UNKNOWN"
+            assert placeholder_entry["entity_type"] == "unknown"
 
             rel_vdb_payload = rag.relationships_vdb.upsert.await_args.args[0]
             assert len(rel_vdb_payload) == 1
