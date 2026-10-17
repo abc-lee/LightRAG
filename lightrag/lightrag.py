@@ -6,7 +6,7 @@ import inspect
 import os
 import time
 import warnings
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, fields, replace
 from datetime import datetime, timezone
 from functools import partial
 from typing import (
@@ -617,7 +617,7 @@ class LightRAG:
         self.embedding_token_limit = embedding_max_token_size
 
         # Fix global_config now
-        global_config = asdict(self)
+        global_config = self._config_snapshot()
         # Restore original EmbeddingFunc object (asdict converts it to dict)
         global_config["embedding_func"] = original_embedding_func
 
@@ -753,6 +753,17 @@ class LightRAG:
         )
 
         self._storages_status = StoragesStatus.CREATED
+
+    def _config_snapshot(self) -> dict:
+        """浅拷贝配置快照。
+
+        原实现调用 ``dataclasses.asdict``，其标准库语义是递归深拷贝——每次查询/
+        每次入库都会把整个对象图复制一遍（含 tokenizer 等重对象，实测单次 1.85s）。
+        下游函数只读 ``global_config`` 且不依赖嵌套 dataclass 被转成 dict
+        （``embedding_func`` 在 __post_init__ 里本就换回对象；``ollama_server_infos``
+        不在 global_config 读取），故浅拷贝语义等价。
+        """
+        return {f.name: getattr(self, f.name) for f in fields(self)}
 
     async def initialize_storages(self):
         """Storage initialization must be called one by one to prevent deadlock"""
@@ -2138,7 +2149,7 @@ class LightRAG:
                                     knowledge_graph_inst=self.chunk_entity_relation_graph,
                                     entity_vdb=self.entities_vdb,
                                     relationships_vdb=self.relationships_vdb,
-                                    global_config=asdict(self),
+                                    global_config=self._config_snapshot(),
                                     full_entities_storage=self.full_entities,
                                     full_relations_storage=self.full_relations,
                                     doc_id=doc_id,
@@ -2321,7 +2332,7 @@ class LightRAG:
         try:
             chunk_results = await extract_entities(
                 chunk,
-                global_config=asdict(self),
+                global_config=self._config_snapshot(),
                 pipeline_status=pipeline_status,
                 pipeline_status_lock=pipeline_status_lock,
                 llm_response_cache=self.llm_response_cache,
@@ -2796,7 +2807,7 @@ class LightRAG:
             actual data is nested under the 'data' field, with 'status' and 'message'
             fields at the top level.
         """
-        global_config = asdict(self)
+        global_config = self._config_snapshot()
 
         # Create a copy of param to avoid modifying the original
         data_param = QueryParam(
@@ -2915,7 +2926,7 @@ class LightRAG:
         """
         logger.debug(f"[aquery_llm] Query param: {param}")
 
-        global_config = asdict(self)
+        global_config = self._config_snapshot()
 
         try:
             query_result = None
@@ -3967,7 +3978,7 @@ class LightRAG:
                         relationships_vdb=self.relationships_vdb,
                         text_chunks_storage=self.text_chunks,
                         llm_response_cache=self.llm_response_cache,
-                        global_config=asdict(self),
+                        global_config=self._config_snapshot(),
                         pipeline_status=pipeline_status,
                         pipeline_status_lock=pipeline_status_lock,
                         entity_chunks_storage=self.entity_chunks,
